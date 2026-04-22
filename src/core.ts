@@ -64,7 +64,7 @@ const DEFAULT_COLORS: CutieLogColors = {
   open: '#4CAF50',
   close: '#FF9800',
   method: '#FF9800',
-  url: '#9C27B0',
+  url: '#B0BEC5',
   success: '#2196F3',
   warning: '#FF9800',
   error: '#F44336',
