@@ -7,6 +7,11 @@ export type CutieConsole = Pick<
 
 export type CutieLogColors = {
   label: string;
+  request: string;
+  response: string;
+  ws: string;
+  open: string;
+  close: string;
   method: string;
   url: string;
   success: string;
@@ -21,6 +26,7 @@ export type CutieLogOptions = {
   label?: string;
   maxPayloadKB?: number | null;
   redactFields?: readonly string[];
+  stripUrlPrefixes?: readonly string[];
   timeLocale?: string;
   console?: CutieConsole;
   colors?: Partial<CutieLogColors>;
@@ -48,17 +54,23 @@ export const DEFAULT_REDACT_FIELDS = [
 ] as const;
 
 const DEFAULT_COLORS: CutieLogColors = {
-  label: '#ec4899',
-  method: '#f59e0b',
-  url: '#8b5cf6',
-  success: '#22c55e',
-  warning: '#f97316',
-  error: '#ef4444',
-  data: '#64748b',
-  event: '#06b6d4',
+  label: '#E91E63',
+  request: '#4CAF50',
+  response: '#2196F3',
+  ws: '#E91E63',
+  open: '#4CAF50',
+  close: '#FF9800',
+  method: '#FF9800',
+  url: '#9C27B0',
+  success: '#2196F3',
+  warning: '#FF9800',
+  error: '#F44336',
+  data: '#607D8B',
+  event: '#9C27B0',
 };
 
 const REDACTED = '[redacted]';
+const URL_REDACTED = 'redacted';
 const MAX_DEPTH = 8;
 
 export type ResolvedCutieLogOptions = Required<
@@ -66,6 +78,7 @@ export type ResolvedCutieLogOptions = Required<
 > & {
   maxPayloadKB: number | null;
   redactFields: readonly string[];
+  stripUrlPrefixes: readonly string[];
   colors: CutieLogColors;
 };
 
@@ -75,6 +88,7 @@ export function resolveLogOptions(options: CutieLogOptions = {}): ResolvedCutieL
     label: options.label ?? 'API',
     maxPayloadKB: options.maxPayloadKB ?? null,
     redactFields: options.redactFields ?? DEFAULT_REDACT_FIELDS,
+    stripUrlPrefixes: options.stripUrlPrefixes ?? [],
     timeLocale: options.timeLocale ?? 'ru-RU',
     console: options.console ?? console,
     colors: {...DEFAULT_COLORS, ...options.colors},
@@ -95,16 +109,78 @@ export function formatTime(locale: string): string {
   });
 }
 
-export function formatUrl(url?: string, baseURL?: string): string {
+export function formatUrl(
+  url?: string,
+  baseURL?: string,
+  options?: Pick<ResolvedCutieLogOptions, 'redactFields' | 'stripUrlPrefixes'>,
+): string {
   if (!url) return 'unknown';
-  if (/^https?:\/\//i.test(url)) return url;
-  if (!baseURL) return url;
+  const fullUrl = buildFullUrl(url, baseURL);
+  return sanitizeUrl(fullUrl, options);
+}
 
+export function sanitizeUrl(
+  url: string,
+  options?: Pick<ResolvedCutieLogOptions, 'redactFields' | 'stripUrlPrefixes'>,
+): string {
+  const redactedUrl = redactUrlQuery(url, options?.redactFields ?? DEFAULT_REDACT_FIELDS);
+  return stripUrlPrefixes(redactedUrl, options?.stripUrlPrefixes ?? []);
+}
+
+function buildFullUrl(url: string, baseURL?: string): string {
+  if (/^(https?|wss?):\/\//i.test(url)) return url;
+  if (!baseURL) return url;
   try {
     return new URL(url, baseURL).toString();
   } catch {
     return `${baseURL.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
   }
+}
+
+function redactUrlQuery(url: string, redactFields: readonly string[]): string {
+  const redactSet = normalizeRedactFields(redactFields);
+  const isAbsolute = /^(https?|wss?):\/\//i.test(url);
+  const hasRelativeQuery = !isAbsolute && (url.startsWith('/') || url.startsWith('?'));
+
+  if (!isAbsolute && !hasRelativeQuery) {
+    return redactUrlQueryFallback(url, redactSet);
+  }
+
+  try {
+    const parsed = new URL(url, isAbsolute ? undefined : 'http://cutie-logs.local');
+    for (const key of Array.from(parsed.searchParams.keys())) {
+      if (shouldRedactKey(key, redactSet)) {
+        parsed.searchParams.set(key, URL_REDACTED);
+      }
+    }
+    if (isAbsolute) return parsed.toString();
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return redactUrlQueryFallback(url, redactSet);
+  }
+}
+
+function redactUrlQueryFallback(url: string, redactSet: Set<string>): string {
+  return url.replace(/([?&])([^=&?#]+)=([^&#]*)/g, (match, prefix: string, key: string) => {
+    return shouldRedactKey(decodeURIComponent(key), redactSet)
+      ? `${prefix}${key}=${URL_REDACTED}`
+      : match;
+  });
+}
+
+function stripUrlPrefixes(url: string, prefixes: readonly string[]): string {
+  const sortedPrefixes = [...prefixes]
+    .filter((prefix) => prefix.trim().length > 0)
+    .sort((left, right) => right.length - left.length);
+
+  for (const prefix of sortedPrefixes) {
+    if (url.startsWith(prefix)) {
+      const stripped = url.slice(prefix.length);
+      return stripped.startsWith('/') || stripped.startsWith('?') ? stripped : `/${stripped}`;
+    }
+  }
+
+  return url;
 }
 
 export function formatPayload(payload: unknown, options: ResolvedCutieLogOptions): unknown {

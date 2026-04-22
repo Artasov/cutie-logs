@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {formatPayload, resolveLogOptions, sanitizePayload} from '../src';
+import {formatPayload, formatUrl, resolveLogOptions, sanitizePayload} from '../src';
 
 describe('sanitizePayload', () => {
   it('redacts sensitive fields recursively', () => {
@@ -49,5 +49,32 @@ describe('formatPayload', () => {
       truncated: true,
       maxPayloadKB: 1,
     });
+  });
+});
+
+describe('formatUrl', () => {
+  it('strips configured URL prefixes', () => {
+    const options = resolveLogOptions({
+      stripUrlPrefixes: ['http://localhost:8000', 'https://xlartas.com'],
+    });
+
+    expect(formatUrl('/auth/ws-ticket/', 'http://localhost:8000', options)).toBe(
+      '/auth/ws-ticket/',
+    );
+    expect(formatUrl('https://xlartas.com/api/v1/me/', undefined, options)).toBe(
+      '/api/v1/me/',
+    );
+  });
+
+  it('redacts sensitive query params in URLs', () => {
+    const options = resolveLogOptions();
+
+    expect(
+      formatUrl(
+        'ws://localhost:8000/ws/ai/transcriptions/?token=secret&room=main',
+        undefined,
+        options,
+      ),
+    ).toBe('ws://localhost:8000/ws/ai/transcriptions/?token=redacted&room=main');
   });
 });

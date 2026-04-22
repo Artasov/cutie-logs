@@ -38,6 +38,7 @@ attachAxiosLogger(api, {
   enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
   label: 'API',
   maxPayloadKB: 100,
+  stripUrlPrefixes: ['http://localhost:8000', 'https://xlartas.com'],
 });
 ```
 
@@ -59,6 +60,7 @@ const wsLogger = createWsLogger({
   enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
   label: 'WS',
   maxPayloadKB: 100,
+  stripUrlPrefixes: ['ws://localhost:8000', 'wss://xlartas.com'],
 });
 
 wsLogger.connecting('/ws/chat/', url);
@@ -81,6 +83,7 @@ type CutieLogOptions = {
   label?: string;
   maxPayloadKB?: number | null;
   redactFields?: readonly string[];
+  stripUrlPrefixes?: readonly string[];
   timeLocale?: string;
   console?: Pick<Console, 'log' | 'error' | 'warn' | 'groupCollapsed' | 'groupEnd'>;
   colors?: Partial<CutieLogColors>;
@@ -91,6 +94,7 @@ type CutieLogOptions = {
 - `label` defaults to `API` for Axios and `WS` for WebSocket.
 - `maxPayloadKB` defaults to `null`, so payloads are not truncated.
 - `redactFields` defaults to common sensitive fields such as `password`, `access`, `refresh`, `token`, `authorization`, `api_key`, and `secret`.
+- `stripUrlPrefixes` removes noisy URL prefixes from logs, for example `http://localhost:8000`.
 - `console` is mainly for tests or custom environments.
 
 ## Exports

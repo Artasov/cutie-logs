@@ -55,12 +55,12 @@ export function logAxiosRequest(
   if (!resolved.enabled) return;
 
   const method = (config.method ?? 'GET').toUpperCase();
-  const fullUrl = formatUrl(config.url, config.baseURL);
+  const fullUrl = formatUrl(config.url, config.baseURL, resolved);
   const timestamp = formatTime(resolved.timeLocale);
 
   resolved.console.groupCollapsed(
-    `%c${resolved.label} -> %c${method} %c${fullUrl} %c[${timestamp}]`,
-    style(resolved.colors.label),
+    `%c${resolved.label} → %c${method} %c${fullUrl} %c[${timestamp}]`,
+    style(resolved.colors.request),
     style(resolved.colors.method),
     style(resolved.colors.url),
     style(resolved.colors.data),
@@ -91,16 +91,16 @@ export function logAxiosResponse(
   if (!resolved.enabled) return;
 
   const method = (response.config.method ?? 'GET').toUpperCase();
-  const fullUrl = formatUrl(response.config.url, response.config.baseURL);
+  const fullUrl = formatUrl(response.config.url, response.config.baseURL, resolved);
   const timestamp = formatTime(resolved.timeLocale);
   const statusColor =
     response.status >= 200 && response.status < 300
-      ? resolved.colors.success
+      ? resolved.colors.response
       : resolved.colors.error;
 
   resolved.console.groupCollapsed(
-    `%c${resolved.label} <- %c${method} %c${fullUrl} %c[${response.status}] %c[${timestamp}]`,
-    style(resolved.colors.label),
+    `%c${resolved.label} ← %c${method} %c${fullUrl} %c[${response.status}] %c[${timestamp}]`,
+    style(resolved.colors.response),
     style(resolved.colors.method),
     style(resolved.colors.url),
     style(statusColor),
@@ -128,7 +128,7 @@ export function logAxiosError(error: AxiosError, options: AttachAxiosLoggerOptio
   if (!config) {
     const timestamp = formatTime(resolved.timeLocale);
     resolved.console.groupCollapsed(
-      `%c${resolved.label} x %c[NETWORK ERROR] %c[${timestamp}]`,
+      `%c${resolved.label} ✗ %c[NETWORK ERROR] %c[${timestamp}]`,
       style(resolved.colors.error),
       style(resolved.colors.error),
       style(resolved.colors.data),
@@ -139,12 +139,12 @@ export function logAxiosError(error: AxiosError, options: AttachAxiosLoggerOptio
   }
 
   const method = (config.method ?? 'GET').toUpperCase();
-  const fullUrl = formatUrl(config.url, config.baseURL);
+  const fullUrl = formatUrl(config.url, config.baseURL, resolved);
   const timestamp = formatTime(resolved.timeLocale);
   const status = error.response?.status ?? 'ERROR';
 
   resolved.console.groupCollapsed(
-    `%c${resolved.label} x %c${method} %c${fullUrl} %c[${status}] %c[${timestamp}]`,
+    `%c${resolved.label} ✗ %c${method} %c${fullUrl} %c[${status}] %c[${timestamp}]`,
     style(resolved.colors.error),
     style(resolved.colors.method),
     style(resolved.colors.url),

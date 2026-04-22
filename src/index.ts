@@ -5,6 +5,7 @@ export {
   formatUrl,
   resolveLogOptions,
   sanitizePayload,
+  sanitizeUrl,
   type CutieConsole,
   type CutieLogColors,
   type CutieLogLevel,

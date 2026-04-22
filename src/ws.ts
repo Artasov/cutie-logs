@@ -2,6 +2,7 @@ import {
   type CutieLogOptions,
   formatPayload,
   formatTime,
+  formatUrl,
   resolveLogOptions,
   style,
 } from './core';
@@ -26,13 +27,13 @@ export function createWsLogger(options: CreateWsLoggerOptions = {}): WsLogger {
 
   return {
     connecting(path, url) {
-      logWsLine(baseOptions, '->', 'CONNECTING', path, resolvedUrlPayload(url));
+      logWsLine(baseOptions, '->', 'CONNECTING', path, resolvedUrlPayload(url, baseOptions));
     },
     open(path, url) {
-      logWsLine(baseOptions, 'ok', 'CONNECTED', path, resolvedUrlPayload(url), 'success');
+      logWsLine(baseOptions, '✓', 'CONNECTED', path, resolvedUrlPayload(url, baseOptions), 'open');
     },
     close(path, code, reason) {
-      logWsLine(baseOptions, 'x', 'DISCONNECTED', path, {code, reason}, 'warning');
+      logWsLine(baseOptions, '✗', 'DISCONNECTED', path, {code, reason}, 'close');
     },
     error(path, error) {
       logWsLine(baseOptions, '!', 'ERROR', path, error, 'error');
@@ -55,7 +56,7 @@ function logWsLine(
   eventName: string,
   path: string,
   payload?: unknown,
-  tone: 'event' | 'success' | 'warning' | 'error' = 'event',
+  tone: 'event' | 'open' | 'close' | 'warning' | 'error' = 'event',
 ): void {
   const resolved = resolveLogOptions(options);
   if (!resolved.enabled) return;
@@ -64,7 +65,7 @@ function logWsLine(
   const color = resolved.colors[tone];
   resolved.console.log(
     `%c${resolved.label} ${marker} %c${eventName} %c${path} %c[${timestamp}]`,
-    style(resolved.colors.label),
+    style(resolved.colors.ws),
     style(color),
     style(resolved.colors.url),
     style(resolved.colors.data),
@@ -85,7 +86,7 @@ function logWsPayload(
   const timestamp = formatTime(resolved.timeLocale);
   resolved.console.groupCollapsed(
     `%c${resolved.label} ${marker} %c${eventName} %c${path} %c[${timestamp}]`,
-    style(resolved.colors.label),
+    style(resolved.colors.ws),
     style(resolved.colors.event),
     style(resolved.colors.url),
     style(resolved.colors.data),
@@ -94,6 +95,11 @@ function logWsPayload(
   resolved.console.groupEnd();
 }
 
-function resolvedUrlPayload(url?: string): {url: string} | undefined {
-  return url ? {url} : undefined;
+function resolvedUrlPayload(
+  url: string | undefined,
+  options: CreateWsLoggerOptions,
+): {url: string} | undefined {
+  if (!url) return undefined;
+  const resolved = resolveLogOptions(options);
+  return {url: formatUrl(url, undefined, resolved)};
 }

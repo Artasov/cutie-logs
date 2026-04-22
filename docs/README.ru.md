@@ -38,6 +38,7 @@ attachAxiosLogger(api, {
   enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
   label: 'API',
   maxPayloadKB: 100,
+  stripUrlPrefixes: ['http://localhost:8000', 'https://xlartas.com'],
 });
 ```
 
@@ -51,6 +52,7 @@ import {createWsLogger} from 'cutie-logs/ws';
 const wsLogger = createWsLogger({
   enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
   label: 'WS',
+  stripUrlPrefixes: ['ws://localhost:8000', 'wss://xlartas.com'],
 });
 
 wsLogger.connecting('/ws/chat/', url);
@@ -71,6 +73,7 @@ ws.onmessage = (event) => {
 - `label` - подпись в консоли, например `API`, `WS`, `LLM`.
 - `maxPayloadKB` - ограничение размера payload. По умолчанию `null`, то есть без ограничения.
 - `redactFields` - поля, которые нужно скрывать. По умолчанию скрываются `password`, `access`, `refresh`, `token`, `authorization`, `api_key`, `secret` и похожие.
+- `stripUrlPrefixes` - префиксы URL, которые нужно убрать из логов, например `http://localhost:8000`.
 - `timeLocale` - локаль времени, по умолчанию `ru-RU`.
 - `colors` - переопределение цветов.
 
