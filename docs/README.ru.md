@@ -1,13 +1,13 @@
 <div align="center">
-  <a href="../README.md">
+  <h1>cutie-logs</h1>
+  <img src="./docs/images/poster.png" alt="English">
+  <a href="./README.md">
     <img src="https://img.shields.io/badge/English-blue?style=for-the-badge" alt="English">
   </a>
-  <a href="./README.ru.md">
+  <a href="./docs/README.ru.md">
     <img src="https://img.shields.io/badge/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9-red?style=for-the-badge" alt="Russian">
   </a>
 </div>
-
-# cutie-logs
 
 Маленькая библиотека для красивого логирования Axios и WebSocket в консоль.
 

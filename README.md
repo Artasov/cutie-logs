@@ -1,4 +1,6 @@
 <div align="center">
+  <h1>cutie-logs</h1>
+  <img src="./docs/images/poster.png" alt="English">
   <a href="./README.md">
     <img src="https://img.shields.io/badge/English-blue?style=for-the-badge" alt="English">
   </a>
@@ -7,7 +9,6 @@
   </a>
 </div>
 
-# cutie-logs
 
 Pretty console logging for Axios and WebSocket traffic.
 
@@ -30,17 +31,17 @@ import axios from 'axios';
 import {attachAxiosLogger} from 'cutie-logs/axios';
 
 const api = axios.create({
-  baseURL: '/api/v1',
-  withCredentials: true,
+    baseURL: '/api/v1',
+    withCredentials: true,
 });
 
 attachAxiosLogger(api, {
-  enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
-  label: 'API',
-  maxPayloadKB: 100,
-  logRequestsDelay: true,
-  logRequestsTime: true,
-  stripUrlPrefixes: ['http://localhost:8000', 'https://xlartas.com'],
+    enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
+    label: 'API',
+    maxPayloadKB: 100,
+    logRequestsDelay: true,
+    logRequestsTime: true,
+    stripUrlPrefixes: ['http://localhost:8000', 'https://xlartas.com'],
 });
 ```
 
@@ -59,10 +60,10 @@ WebSocket logging is explicit because patching global `WebSocket` is too magical
 import {createWsLogger} from 'cutie-logs/ws';
 
 const wsLogger = createWsLogger({
-  enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
-  label: 'WS',
-  maxPayloadKB: 100,
-  stripUrlPrefixes: ['ws://localhost:8000', 'wss://xlartas.com'],
+    enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
+    label: 'WS',
+    maxPayloadKB: 100,
+    stripUrlPrefixes: ['ws://localhost:8000', 'wss://xlartas.com'],
 });
 
 wsLogger.connecting('/ws/chat/', url);
@@ -72,8 +73,8 @@ ws.onopen = () => wsLogger.open('/ws/chat/', url);
 ws.onclose = (event) => wsLogger.close('/ws/chat/', event.code, event.reason);
 ws.onerror = (event) => wsLogger.error('/ws/chat/', event);
 ws.onmessage = (event) => {
-  const payload = JSON.parse(event.data);
-  wsLogger.message('/ws/chat/', payload.event ?? 'message', payload);
+    const payload = JSON.parse(event.data);
+    wsLogger.message('/ws/chat/', payload.event ?? 'message', payload);
 };
 ```
 
@@ -81,24 +82,25 @@ ws.onmessage = (event) => {
 
 ```ts
 type CutieLogOptions = {
-  enabled?: boolean;
-  label?: string;
-  maxPayloadKB?: number | null;
-  redactFields?: readonly string[];
-  stripUrlPrefixes?: readonly string[];
-  logRequestsDelay?: boolean;
-  logRequestsTime?: boolean;
-  timeLocale?: string;
-  timestampFormatter?: (date: Date) => string;
-  console?: Pick<Console, 'log' | 'error' | 'warn' | 'groupCollapsed' | 'groupEnd'>;
-  colors?: Partial<CutieLogColors>;
+    enabled?: boolean;
+    label?: string;
+    maxPayloadKB?: number | null;
+    redactFields?: readonly string[];
+    stripUrlPrefixes?: readonly string[];
+    logRequestsDelay?: boolean;
+    logRequestsTime?: boolean;
+    timeLocale?: string;
+    timestampFormatter?: (date: Date) => string;
+    console?: Pick<Console, 'log' | 'error' | 'warn' | 'groupCollapsed' | 'groupEnd'>;
+    colors?: Partial<CutieLogColors>;
 };
 ```
 
 - `enabled` defaults to `true`.
 - `label` defaults to `API` for Axios and `WS` for WebSocket.
 - `maxPayloadKB` defaults to `null`, so payloads are not truncated.
-- `redactFields` defaults to common sensitive fields such as `password`, `access`, `refresh`, `token`, `authorization`, `api_key`, and `secret`.
+- `redactFields` defaults to common sensitive fields such as `password`, `access`, `refresh`, `token`, `authorization`,
+  `api_key`, and `secret`.
 - `stripUrlPrefixes` removes noisy URL prefixes from logs, for example `http://localhost:8000`.
 - `logRequestsDelay` shows response/error delay such as `[124ms]`. It defaults to `false`.
 - `logRequestsTime` shows the current browser-local time. It defaults to `true`.
