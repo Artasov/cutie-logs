@@ -27,7 +27,10 @@ export type CutieLogOptions = {
   maxPayloadKB?: number | null;
   redactFields?: readonly string[];
   stripUrlPrefixes?: readonly string[];
+  logRequestsDelay?: boolean;
+  logRequestsTime?: boolean;
   timeLocale?: string;
+  timestampFormatter?: (date: Date) => string;
   console?: CutieConsole;
   colors?: Partial<CutieLogColors>;
 };
@@ -79,6 +82,9 @@ export type ResolvedCutieLogOptions = Required<
   maxPayloadKB: number | null;
   redactFields: readonly string[];
   stripUrlPrefixes: readonly string[];
+  logRequestsDelay: boolean;
+  logRequestsTime: boolean;
+  timestampFormatter: ((date: Date) => string) | null;
   colors: CutieLogColors;
 };
 
@@ -89,7 +95,10 @@ export function resolveLogOptions(options: CutieLogOptions = {}): ResolvedCutieL
     maxPayloadKB: options.maxPayloadKB ?? null,
     redactFields: options.redactFields ?? DEFAULT_REDACT_FIELDS,
     stripUrlPrefixes: options.stripUrlPrefixes ?? [],
+    logRequestsDelay: options.logRequestsDelay ?? false,
+    logRequestsTime: options.logRequestsTime ?? true,
     timeLocale: options.timeLocale ?? 'ru-RU',
+    timestampFormatter: options.timestampFormatter ?? null,
     console: options.console ?? console,
     colors: {...DEFAULT_COLORS, ...options.colors},
   };
@@ -99,13 +108,19 @@ export function style(color: string): string {
   return `color: ${color}; font-weight: bold;`;
 }
 
-export function formatTime(locale: string): string {
-  return new Date().toLocaleTimeString(locale, {
+export function formatTime(
+  locale: string,
+  timestampFormatter?: ((date: Date) => string) | null,
+): string {
+  const date = new Date();
+  if (timestampFormatter) {
+    return timestampFormatter(date);
+  }
+
+  return date.toLocaleTimeString(locale, {
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
-    fractionalSecondDigits: 3,
   });
 }
 

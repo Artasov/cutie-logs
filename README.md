@@ -38,6 +38,8 @@ attachAxiosLogger(api, {
   enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
   label: 'API',
   maxPayloadKB: 100,
+  logRequestsDelay: true,
+  logRequestsTime: true,
   stripUrlPrefixes: ['http://localhost:8000', 'https://xlartas.com'],
 });
 ```
@@ -84,7 +86,10 @@ type CutieLogOptions = {
   maxPayloadKB?: number | null;
   redactFields?: readonly string[];
   stripUrlPrefixes?: readonly string[];
+  logRequestsDelay?: boolean;
+  logRequestsTime?: boolean;
   timeLocale?: string;
+  timestampFormatter?: (date: Date) => string;
   console?: Pick<Console, 'log' | 'error' | 'warn' | 'groupCollapsed' | 'groupEnd'>;
   colors?: Partial<CutieLogColors>;
 };
@@ -95,6 +100,9 @@ type CutieLogOptions = {
 - `maxPayloadKB` defaults to `null`, so payloads are not truncated.
 - `redactFields` defaults to common sensitive fields such as `password`, `access`, `refresh`, `token`, `authorization`, `api_key`, and `secret`.
 - `stripUrlPrefixes` removes noisy URL prefixes from logs, for example `http://localhost:8000`.
+- `logRequestsDelay` shows response/error delay such as `[124ms]`. It defaults to `false`.
+- `logRequestsTime` shows the current browser-local time. It defaults to `true`.
+- `timestampFormatter` overrides the default `HH:MM` browser-local time formatter.
 - `console` is mainly for tests or custom environments.
 
 ## Exports

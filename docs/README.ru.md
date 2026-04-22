@@ -38,6 +38,8 @@ attachAxiosLogger(api, {
   enabled: process.env.NEXT_PUBLIC_API_LOGGING !== 'false',
   label: 'API',
   maxPayloadKB: 100,
+  logRequestsDelay: true,
+  logRequestsTime: true,
   stripUrlPrefixes: ['http://localhost:8000', 'https://xlartas.com'],
 });
 ```
@@ -74,6 +76,9 @@ ws.onmessage = (event) => {
 - `maxPayloadKB` - ограничение размера payload. По умолчанию `null`, то есть без ограничения.
 - `redactFields` - поля, которые нужно скрывать. По умолчанию скрываются `password`, `access`, `refresh`, `token`, `authorization`, `api_key`, `secret` и похожие.
 - `stripUrlPrefixes` - префиксы URL, которые нужно убрать из логов, например `http://localhost:8000`.
+- `logRequestsDelay` - показывает время выполнения ответа/ошибки, например `[124ms]`. По умолчанию выключено.
+- `logRequestsTime` - показывает текущее время в таймзоне браузера. По умолчанию включено.
+- `timestampFormatter` - позволяет полностью переопределить формат времени.
 - `timeLocale` - локаль времени, по умолчанию `ru-RU`.
 - `colors` - переопределение цветов.
 

@@ -1,5 +1,6 @@
 import {
   type CutieLogOptions,
+  type ResolvedCutieLogOptions,
   formatPayload,
   formatTime,
   formatUrl,
@@ -61,16 +62,16 @@ function logWsLine(
   const resolved = resolveLogOptions(options);
   if (!resolved.enabled) return;
 
-  const timestamp = formatTime(resolved.timeLocale);
   const color = resolved.colors[tone];
-  resolved.console.log(
-    `%c${resolved.label} ${marker} %c${eventName} %c${path} %c[${timestamp}]`,
-    style(resolved.colors.ws),
-    style(color),
-    style(resolved.colors.url),
-    style(resolved.colors.data),
-    formatPayload(payload, resolved),
-  );
+  const timeText = formatLogTime(resolved);
+  const message = [`%c${resolved.label} ${marker}`, `%c${eventName}`, `%c${path}`];
+  const args = [style(resolved.colors.ws), style(color), style(resolved.colors.url)];
+  if (timeText) {
+    message.push(`%c[${timeText}]`);
+    args.push(style(resolved.colors.data));
+  }
+
+  resolved.console.log(message.join(' '), ...args, formatPayload(payload, resolved));
 }
 
 function logWsPayload(
@@ -83,14 +84,19 @@ function logWsPayload(
   const resolved = resolveLogOptions(options);
   if (!resolved.enabled) return;
 
-  const timestamp = formatTime(resolved.timeLocale);
-  resolved.console.groupCollapsed(
-    `%c${resolved.label} ${marker} %c${eventName} %c${path} %c[${timestamp}]`,
+  const timeText = formatLogTime(resolved);
+  const message = [`%c${resolved.label} ${marker}`, `%c${eventName}`, `%c${path}`];
+  const args = [
     style(resolved.colors.ws),
     style(resolved.colors.event),
     style(resolved.colors.url),
-    style(resolved.colors.data),
-  );
+  ];
+  if (timeText) {
+    message.push(`%c[${timeText}]`);
+    args.push(style(resolved.colors.data));
+  }
+
+  resolved.console.groupCollapsed(message.join(' '), ...args);
   resolved.console.log('%cPayload:', style(resolved.colors.data), formatPayload(payload, resolved));
   resolved.console.groupEnd();
 }
@@ -102,4 +108,9 @@ function resolvedUrlPayload(
   if (!url) return undefined;
   const resolved = resolveLogOptions(options);
   return {url: formatUrl(url, undefined, resolved)};
+}
+
+function formatLogTime(options: ResolvedCutieLogOptions): string | null {
+  if (!options.logRequestsTime) return null;
+  return formatTime(options.timeLocale, options.timestampFormatter);
 }

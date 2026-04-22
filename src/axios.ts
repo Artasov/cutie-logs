@@ -7,6 +7,7 @@ import type {
 } from 'axios';
 import {
   type CutieLogOptions,
+  type ResolvedCutieLogOptions,
   formatPayload,
   formatTime,
   formatUrl,
@@ -21,11 +22,14 @@ export type AttachAxiosLoggerOptions = CutieLogOptions & {
 
 export type DetachAxiosLogger = () => void;
 
+const REQUEST_STARTED_AT = '__cutieLogsStartedAt';
+
 export function attachAxiosLogger(
   api: AxiosInstance,
   options: AttachAxiosLoggerOptions = {},
 ): DetachAxiosLogger {
   const requestInterceptorId = api.interceptors.request.use((config) => {
+    (config as unknown as Record<string, unknown>)[REQUEST_STARTED_AT] = nowMs();
     logAxiosRequest(config, options);
     return config;
   });
@@ -56,15 +60,20 @@ export function logAxiosRequest(
 
   const method = (config.method ?? 'GET').toUpperCase();
   const fullUrl = formatUrl(config.url, config.baseURL, resolved);
-  const timestamp = formatTime(resolved.timeLocale);
+  const timeText = formatLogTime(resolved);
 
-  resolved.console.groupCollapsed(
-    `%c${resolved.label} → %c${method} %c${fullUrl} %c[${timestamp}]`,
+  const message = [`%c${resolved.label} →`, `%c${method}`, `%c${fullUrl}`];
+  const args = [
     style(resolved.colors.request),
     style(resolved.colors.method),
     style(resolved.colors.url),
-    style(resolved.colors.data),
-  );
+  ];
+  if (timeText) {
+    message.push(`%c[${timeText}]`);
+    args.push(style(resolved.colors.data));
+  }
+
+  resolved.console.groupCollapsed(message.join(' '), ...args);
 
   if (config.params) {
     resolved.console.log(
@@ -92,20 +101,35 @@ export function logAxiosResponse(
 
   const method = (response.config.method ?? 'GET').toUpperCase();
   const fullUrl = formatUrl(response.config.url, response.config.baseURL, resolved);
-  const timestamp = formatTime(resolved.timeLocale);
+  const timeText = formatLogTime(resolved);
+  const delayText = formatLogDelay(response.config, resolved);
   const statusColor =
     response.status >= 200 && response.status < 300
       ? resolved.colors.response
       : resolved.colors.error;
 
-  resolved.console.groupCollapsed(
-    `%c${resolved.label} ← %c${method} %c${fullUrl} %c[${response.status}] %c[${timestamp}]`,
+  const message = [
+    `%c${resolved.label} ←`,
+    `%c${method}`,
+    `%c${fullUrl}`,
+    `%c[${response.status}]`,
+  ];
+  const args = [
     style(resolved.colors.response),
     style(resolved.colors.method),
     style(resolved.colors.url),
     style(statusColor),
-    style(resolved.colors.data),
-  );
+  ];
+  if (delayText) {
+    message.push(`%c[${delayText}]`);
+    args.push(style(resolved.colors.data));
+  }
+  if (timeText) {
+    message.push(`%c[${timeText}]`);
+    args.push(style(resolved.colors.data));
+  }
+
+  resolved.console.groupCollapsed(message.join(' '), ...args);
 
   if (response.statusText) {
     resolved.console.log('%cStatus:', style(resolved.colors.data), response.statusText);
@@ -126,13 +150,14 @@ export function logAxiosError(error: AxiosError, options: AttachAxiosLoggerOptio
 
   const config = error.config;
   if (!config) {
-    const timestamp = formatTime(resolved.timeLocale);
-    resolved.console.groupCollapsed(
-      `%c${resolved.label} ✗ %c[NETWORK ERROR] %c[${timestamp}]`,
-      style(resolved.colors.error),
-      style(resolved.colors.error),
-      style(resolved.colors.data),
-    );
+    const timeText = formatLogTime(resolved);
+    const message = [`%c${resolved.label} ✗`, `%c[NETWORK ERROR]`];
+    const args = [style(resolved.colors.error), style(resolved.colors.error)];
+    if (timeText) {
+      message.push(`%c[${timeText}]`);
+      args.push(style(resolved.colors.data));
+    }
+    resolved.console.groupCollapsed(message.join(' '), ...args);
     resolved.console.log('%cError message:', style(resolved.colors.data), error.message);
     resolved.console.groupEnd();
     return;
@@ -140,17 +165,32 @@ export function logAxiosError(error: AxiosError, options: AttachAxiosLoggerOptio
 
   const method = (config.method ?? 'GET').toUpperCase();
   const fullUrl = formatUrl(config.url, config.baseURL, resolved);
-  const timestamp = formatTime(resolved.timeLocale);
+  const timeText = formatLogTime(resolved);
+  const delayText = formatLogDelay(config, resolved);
   const status = error.response?.status ?? 'ERROR';
 
-  resolved.console.groupCollapsed(
-    `%c${resolved.label} ✗ %c${method} %c${fullUrl} %c[${status}] %c[${timestamp}]`,
+  const message = [
+    `%c${resolved.label} ✗`,
+    `%c${method}`,
+    `%c${fullUrl}`,
+    `%c[${status}]`,
+  ];
+  const args = [
     style(resolved.colors.error),
     style(resolved.colors.method),
     style(resolved.colors.url),
     style(resolved.colors.error),
-    style(resolved.colors.data),
-  );
+  ];
+  if (delayText) {
+    message.push(`%c[${delayText}]`);
+    args.push(style(resolved.colors.data));
+  }
+  if (timeText) {
+    message.push(`%c[${timeText}]`);
+    args.push(style(resolved.colors.data));
+  }
+
+  resolved.console.groupCollapsed(message.join(' '), ...args);
 
   if (error.response?.data) {
     resolved.console.log(
@@ -162,4 +202,26 @@ export function logAxiosError(error: AxiosError, options: AttachAxiosLoggerOptio
     resolved.console.log('%cError message:', style(resolved.colors.data), error.message);
   }
   resolved.console.groupEnd();
+}
+
+function nowMs(): number {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now();
+  }
+  return Date.now();
+}
+
+function formatLogTime(options: ResolvedCutieLogOptions): string | null {
+  if (!options.logRequestsTime) return null;
+  return formatTime(options.timeLocale, options.timestampFormatter);
+}
+
+function formatLogDelay(
+  config: AxiosRequestConfig | InternalAxiosRequestConfig,
+  options: ResolvedCutieLogOptions,
+): string | null {
+  if (!options.logRequestsDelay) return null;
+  const startedAt = (config as unknown as Record<string, unknown>)[REQUEST_STARTED_AT];
+  if (typeof startedAt !== 'number') return null;
+  return `${Math.max(0, Math.round(nowMs() - startedAt))}ms`;
 }
