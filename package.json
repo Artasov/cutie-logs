@@ -1,0 +1,64 @@
+{
+  "name": "cutie-logs",
+  "version": "0.1.0",
+  "description": "Pretty console logging for Axios and WebSocket traffic.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Artasov/cutie-logs.git"
+  },
+  "homepage": "https://github.com/Artasov/cutie-logs#readme",
+  "bugs": {
+    "url": "https://github.com/Artasov/cutie-logs/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./axios": {
+      "types": "./dist/axios.d.ts",
+      "import": "./dist/axios.js",
+      "default": "./dist/axios.js"
+    },
+    "./ws": {
+      "types": "./dist/ws.d.ts",
+      "import": "./dist/ws.js",
+      "default": "./dist/ws.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "docs"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsup src/index.ts src/axios.ts src/ws.ts --format esm --dts",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --environment node --pool threads",
+    "pack:dry-run": "npm pack --dry-run"
+  },
+  "peerDependencies": {
+    "axios": ">=1.0.0 <2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "axios": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "axios": "^1.15.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
